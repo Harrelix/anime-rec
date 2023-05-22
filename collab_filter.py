@@ -9,20 +9,22 @@ TARGET_USER = ""
 
 def calculate_similarity(user_lists, target_user):
     similarities = {}
-    target_ratings = user_lists[target_user]
+    target_list = user_lists[target_user]
 
-    for user, ratings in user_lists.items():
+    for user, anime_list in user_lists.items():
         if user == target_user:
             continue
-        common_shows = set(target_ratings.keys()) & set(ratings.keys())
+        common_shows = set(target_list.keys()) & set(anime_list.keys())
 
         if not common_shows:
             continue
 
-        sum_of_squares = sum(
-            (target_ratings[show] - ratings[show]) ** 2 for show in common_shows
-        )
-        similarity = 1 / (1 + sqrt(sum_of_squares))
+        # cosine similarity
+        dot_product = sum(target_list[show] * anime_list[show] for show in common_shows)
+        magnitude_target = sqrt(sum(score ** 2 for score in target_list.values()))
+        magnitude_user = sqrt(sum(score ** 2 for score in anime_list.values()))
+        
+        similarity = dot_product / (magnitude_target * magnitude_user)
         similarities[user] = similarity
 
     return similarities
