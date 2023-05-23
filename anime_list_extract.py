@@ -12,6 +12,11 @@ USERNAME_FILE = "data/usernames.txt"
 ANIME_LISTS_FILE = "data/user_lists.json"
 ANIME_TITLES_FILE = "data/anime_titles.csv"
 
+# exponential backoff parameters
+INIT_WAIT_TIME = 1
+WAIT_TIME_MULTIPLIER = 2
+MAX_WAIT_TIME = 60
+
 
 def main():
     # Load usernames from file
@@ -22,7 +27,7 @@ def main():
     with open(USERNAME_FILE, "r", encoding="utf8") as f:
         usernames = f.readlines()
 
-    # Initialize a dictionary to store titles
+    # Initialize a dictionary to map id -> titles
     anime_titles = dict()
     # Check if the titles file exists
     if not os.path.exists(ANIME_TITLES_FILE):
@@ -63,28 +68,17 @@ def main():
         # Print progress
         sys.stdout.write(f"Processed: {processed_count}/{total_usernames} usernames\r")
         sys.stdout.flush()
-    
+
         # Make a request to the API to get the user's list
-        response = requests.get(
-            f"https://api.myanimelist.net/v2/users/{username}/animelist?fields=list_status&limit={LIMIT_PER_USER}",
-            headers=header,
-        )
-        try:
-            response.raise_for_status()
-        except:
-            # If the request fails, print an error message and continue to the next user
+        response_json = user_list_request(username, header)
+        if response_json is None:
             failed_count += 1
-            sys.stdout.write(f"Failed request: {username.ljust(24)}\n")
-            sys.stdout.flush()
             continue
-        
-        # Parse the response JSON
-        d = response.json()
 
         # Initialize a dictionary for the user's list
         user_lists[username] = dict()
 
-        for entry in d["data"]:
+        for entry in response_json["data"]:
             score = entry["list_status"]["score"]
 
             # Skip entries with a score of 0
@@ -115,6 +109,48 @@ def main():
         writer = csv.writer(f)
         for id, title in new_titles.items():
             writer.writerow([id, title])
+
+
+def user_list_request(username, header) -> dict | None:
+    url = f"https://api.myanimelist.net/v2/users/{username}/animelist?fields=list_status&limit={LIMIT_PER_USER}"
+    response = requests.get(url, headers=header)
+
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        if response.headers["content-type"] != "text/html":
+            sys.stdout.write(
+                f"Failed request for user {username.ljust(24)} ERROR CODE: {response.status_code}"
+            )
+            if response.status_code == 403:
+                sys.stdout.write("\t(user's probably privated)")
+            sys.stdout.write("\n")
+            return None
+
+        # when content-type is "text/html", api rate limit is probably reached
+        sys.stdout.write("API rate limit reached".ljust(64) + "\n")
+
+        # exponential backoff
+        wait_time = INIT_WAIT_TIME
+        total_wait_time = 0
+
+        while True:
+            sys.stdout.write(f"Waiting {wait_time}s for next request\r")
+            sys.stdout.flush()
+            time.sleep(wait_time)
+            total_wait_time += wait_time
+
+            response = requests.get(url, headers=header)
+            if response.ok:
+                sys.stdout.write(
+                    f"Request succeeded after waiting {total_wait_time}s\n"
+                )
+                return response.json()
+
+            wait_time = min(wait_time * WAIT_TIME_MULTIPLIER, MAX_WAIT_TIME)
+
+    return response.json()
+
 
 if __name__ == "__main__":
     main()

@@ -5,9 +5,12 @@ import json
 ANIME_LISTS_FILE = "data/user_lists.json"
 ANIME_TITLES_FILE = "data/anime_titles.csv"
 TARGET_USER = ""
+import time
 
 
-def calculate_similarity(user_lists, target_user):
+def calculate_similarity(
+    user_lists: dict[str, dict[int, int]], target_user: str
+) -> dict[int, float]:
     similarities = {}
     target_list = user_lists[target_user]
 
@@ -21,9 +24,9 @@ def calculate_similarity(user_lists, target_user):
 
         # cosine similarity
         dot_product = sum(target_list[show] * anime_list[show] for show in common_shows)
-        magnitude_target = sqrt(sum(score ** 2 for score in target_list.values()))
-        magnitude_user = sqrt(sum(score ** 2 for score in anime_list.values()))
-        
+        magnitude_target = sqrt(sum(score**2 for score in target_list.values()))
+        magnitude_user = sqrt(sum(score**2 for score in anime_list.values()))
+
         similarity = dot_product / (magnitude_target * magnitude_user)
         similarities[user] = similarity
 
@@ -35,12 +38,14 @@ def recommend_shows(user_lists, target_user, num_recommendations=3):
     weighted_scores = {}
     similarities = calculate_similarity(user_lists, target_user)
 
+    time_start = time.time()
     for user, similarity in similarities.items():
         for show, score in user_lists[user].items():
             if show not in target_list:
                 weighted_scores.setdefault(show, 0)
                 weighted_scores[show] += score * similarity
 
+    print(f"Time elapsed: {time.time() - time_start}")
     sorted_shows = sorted(weighted_scores.items(), key=lambda x: x[1], reverse=True)
     recommendations = [show for show, _ in sorted_shows[:num_recommendations]]
 

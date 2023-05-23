@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-STOPPING_POINT = 128
+STOPPING_POINT = 900
 USERNAMES_FILE = "data/usernames.txt"
 
 
@@ -48,7 +48,9 @@ def main():
     elapsed_time = end_time - start_time
 
     # Print the final results
-    sys.stdout.write(f"\nRefreshed {num_refresh} times. Got {len(usernames)} usernames\n")
+    sys.stdout.write(
+        f"\nRefreshed {num_refresh} times. Got {len(usernames)} usernames\n"
+    )
     sys.stdout.write(f"Time taken: {elapsed_time:.2f} seconds\n")
 
     # Check if a file with existing usernames exists
