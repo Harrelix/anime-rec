@@ -94,7 +94,7 @@ def main():
             new_titles = dict()
 
         # Print progress
-        sys.stdout.write(f"Processed: {processed_count}/{total_usernames} usernames\r")
+        print(f"Processed: {processed_count}/{total_usernames} usernames", end="\r")
         sys.stdout.flush()
 
         # Make a request to the API to get the user's list
@@ -136,8 +136,8 @@ def main():
     elapsed_time = end_time - start_time
 
     # Print failed requests count and time taken
-    sys.stdout.write(f"\nTotal failed requests: {failed_count}\n")
-    sys.stdout.write(f"Time taken: {elapsed_time:.2f} seconds\n")
+    print(f"\nTotal failed requests: {failed_count}")
+    print(f"Time taken: {elapsed_time:.2f} seconds")
 
     save_to_file(user_lists, new_bad_usernames, new_titles)
 
@@ -150,14 +150,14 @@ def user_list_request(username, header) -> dict | None:
         response.raise_for_status()
     except requests.exceptions.HTTPError as e:
         if response.headers["content-type"] != "text/html":
-            sys.stdout.write(
-                f"Failed request for user {username.ljust(24)} ERROR CODE: {response.status_code}\t"
+            print(
+                f"Failed request for user {username.ljust(24)} ERROR CODE: {response.status_code}",
+                end="\t",
             )
             if response.status_code == 403:
-                sys.stdout.write("(user probably is privated)")
+                print("(user probably is privated)")
             elif response.status_code == 404:
-                sys.stdout.write("(user probably don't exist)")
-            sys.stdout.write("\n")
+                print("(user probably don't exist)")
             return None
 
         # when content-type is "text/html", api rate limit is probably reached
@@ -168,7 +168,7 @@ def user_list_request(username, header) -> dict | None:
         total_wait_time = 0
 
         while True:
-            sys.stdout.write(f"Waiting {wait_time}s for next request\r")
+            print(f"Waiting {wait_time}s for next request", end="\r")
             sys.stdout.flush()
             time.sleep(wait_time)
             total_wait_time += wait_time
@@ -178,12 +178,8 @@ def user_list_request(username, header) -> dict | None:
                 wait_time = min(wait_time * WAIT_TIME_MULTIPLIER, MAX_WAIT_TIME)
                 continue
 
-            sys.stdout.write(
-                f"Request succeeded after waiting {total_wait_time}s\n"
-            )
+            print(f"Request succeeded after waiting {total_wait_time}s")
             return response.json()
-
-            
 
     return response.json()
 
@@ -203,6 +199,7 @@ def save_to_file(user_lists, new_bad_usernames, new_titles):
     with open(BAD_USERNAMES_FILE, "a", encoding="utf8") as f:
         for username in new_bad_usernames:
             f.write(username + "\n")
+
 
 if __name__ == "__main__":
     main()

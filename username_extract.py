@@ -28,7 +28,7 @@ def main():
     # Scraping loop: continue until enough usernames are collected
     while len(usernames) < STOPPING_POINT:
         if wait_time > 0:
-            sys.stdout.write(f"Waiting {wait_time}s for next request\r")
+            print(f"Waiting {wait_time}s for next request", end="\r")
             sys.stdout.flush()
             time.sleep(wait_time)
             total_wait_time += wait_time
@@ -70,7 +70,7 @@ def main():
             usernames.add(username)
 
             # Print the progress to the console
-            sys.stdout.write(f"Scraped {len(usernames)} users\r")
+            print(f"Scraped {len(usernames)} users", end="\r")
             sys.stdout.flush()
 
         num_refresh += 1  # Increment the refresh counter
@@ -80,10 +80,8 @@ def main():
     elapsed_time = end_time - start_time
 
     # Print the final results
-    sys.stdout.write(
-        f"\nRefreshed {num_refresh} times. Got {len(usernames)} usernames\n"
-    )
-    sys.stdout.write(f"Time taken: {elapsed_time:.2f} seconds\n")
+    print(f"\nRefreshed {num_refresh} times. Got {len(usernames)} usernames")
+    print(f"Time taken: {elapsed_time:.2f} seconds")
 
     # Check if a file with existing usernames exists
     existing_usernames = []
@@ -99,6 +97,7 @@ def main():
     with open(USERNAMES_FILE, "a", encoding="utf8") as f:
         for username in usernames:
             f.write(username + "\n")
+
 
 if __name__ == "__main__":
     main()
