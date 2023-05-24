@@ -67,10 +67,12 @@ def main():
         _header = next(reader)
         titles = {int(id): title for id, title in reader}
 
-    recommendation_ids = recommend_shows(user_lists, TARGET_USER)
+    recommendation_ids = recommend_shows(user_lists, TARGET_USER, 10)
 
     recommendations = [titles[id] for id in recommendation_ids]
-    print(f"{recommendations = }")
+    print(f"{TARGET_USER}'s recommendations:")
+    print('\n'.join(recommendations))
+
 
 
 if __name__ == "__main__":
